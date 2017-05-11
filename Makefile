@@ -1,27 +1,22 @@
 include $(APP_DIR)/app.mk
-
-TARGET = libfcgitools.so
-
-
-#Fcgi
-FCGI_INCLUDE = -I$(APP_DIR)/httpd/third-part_support/fcgi/include
-CFLAGS += $(FCGI_INCLUDE)
-ARCH = $(shell getconf LONG_BIT)
-ifeq ("$(ARCH)","32")
-LDFLAGS += -L$(APP_DIR)/httpd/third-part_support/fcgi/lib -lfcgi
-else
-LDFLAGS += -L$(APP_DIR)/httpd/third-part_support/fcgi/lib64 -lfcgi
-endif
-
-LDFLAGS += -L$(APP_DIR)/lib/fcgi -lmultipart
-
+TARGET = libweixin.so
+#cJSON
+LDFLAGS += -L$(APP_DIR)/lib/weixin -lcJSON
+#xml2
+CFLAGS += -I$(APP_DIR)/lib/weixin/libxml2
+LDFLAGS += -lxml2
+#curl
+LDFLAGS += -lcurl
 SOURCE= \
-	lib_fcgitools.c
+	lib_weixin.c
 
 OBJS = $(SOURCE:%.c=obj/%.o)
 
 $(TARGET): $(OBJS)
 	$(CC) -fPIC -shared -o $@ $(OBJS) $(LDFLAGS)
+
+weixin: $(OBJS)
+	$(CC) -o $@ $(OBJS) $(LDFLAGS)
 
 obj/%.o:%.c
 	@mkdir -p obj
@@ -29,7 +24,9 @@ obj/%.o:%.c
 	
 install:
 	cp -f $(TARGET) $(ROOTFS_DIR)/apache/lib/
-	cp -f libmultipart.so $(ROOTFS_DIR)/apache/lib/
+	cp -f libcJSON.so $(ROOTFS_DIR)/apache/lib/
+	cp -f libxml2.so $(ROOTFS_DIR)/apache/lib/
+	cp -f libcurl.so $(ROOTFS_DIR)/apache/lib/
 
 clean:
 	rm -fr obj $(OBJS) $(TARGET)
