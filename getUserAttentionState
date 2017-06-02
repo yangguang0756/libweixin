@@ -1,0 +1,17 @@
+#!/bin/sh
+if [ ! $1 ]; then 
+	echo -e "openId is null!\nusage:\ngetUserAttentionState openId appId appSecret" 
+	exit
+fi
+if [ ! $2 ]; then 
+	echo -e "appId is null!\nusage:\ngetUserAttentionState openId appId appSecret" 
+	exit
+fi  
+if [ ! $3 ]; then 
+	echo -e "appSecret is null!\nusage:\ngetUserAttentionState openId appId appSecret" 
+	exit
+fi
+ac_path="/usr/local/ac"
+export LD_LIBRARY_PATH="$ac_path/apache/lib/"
+$ac_path/apache/cgi-bin/authresult $1 $2 $3
+export LD_LIBRARY_PATH=""
