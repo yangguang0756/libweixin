@@ -27,6 +27,7 @@ install:
 	cp -f libcJSON.so $(ROOTFS_DIR)/apache/lib/
 	cp -f libxml2.so $(ROOTFS_DIR)/apache/lib/
 	cp -f libcurl.so $(ROOTFS_DIR)/apache/lib/
+	cp -f getUserAttentionState $(INST_DIR)/bin/
 
 clean:
 	rm -fr obj $(OBJS) $(TARGET)
