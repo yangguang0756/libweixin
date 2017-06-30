@@ -303,11 +303,32 @@ char * CreatJsonData(char ** json_string)
     cJSON_AddStringToObject(pItem, "sex", "male");  
     cJSON_AddNumberToObject(pItem, "age", 22);  
     cJSON_AddItemToArray(pArray, pItem);  
-  
-    szJson_Result = cJSON_Print(pRoot);  
-    cJSON_Delete(pRoot);
-	fprintf(stderr, "%s\n",szJson_Result);  
-	return szJson_Result;
+
+	if (json_string != NULL)
+	{
+		if (*json_string != NULL)
+		{
+			free(*json_string);
+			*json_string = NULL;
+		}
+		*json_string = cJSON_Print(pRoot);
+		fprintf(stderr, "json_string:%s\n",*json_string);
+		cJSON_Delete(pRoot);
+		return *json_string;
+	}
+	else
+	{
+		if (szJson_Result != NULL)
+		{
+			free(szJson_Result);
+			szJson_Result = NULL;
+		}
+		szJson_Result = cJSON_Print(pRoot);
+		fprintf(stderr, "szJson_Result:%s\n",szJson_Result);
+		cJSON_Delete(pRoot);
+		return szJson_Result;
+	}
+	return "";
 }
 //释放json字段的内存空间
 void FreeJsonData(char * json_string)
@@ -664,7 +685,13 @@ int main(void)
 	fprintf(stderr, "hello world!\n");
 	//CreatJsonData(NULL);
 	//ParseJsonData(szJson_Result);
+	//ParseJsonData(CreatJsonData(NULL));
 	//FreeJsonData(NULL);
+	//char * json_string = NULL;
+	//CreatJsonData(&json_string);
+	//ParseJsonData(json_string);
+	//ParseJsonData(CreatJsonData(&json_string));
+	//FreeJsonData(json_string);
 	#if 0
 	xmlChar * szXml = NULL;
 	int szXml_len = 0;
@@ -685,9 +712,9 @@ int main(void)
 	fprintf(stderr, "expires_in:%s\n", GetJsonResultByName("expires_in"));
 	FreeJsonResult();
 	#endif
-	char * access_token = getAccessToken("wxfb84576193871a35", "c522890e544711b201a0d61e1b8bed4c");
-	fprintf(stderr, "access_token:%s\n", access_token);
-	int attention_state = getUserAttentionState("aaa", "or8D3v1ahWB3jxvU7pYilLy7_b1E");
-	fprintf(stderr, "attention_state:%d\n", attention_state);
+	//char * access_token = getAccessToken("wxfb84576193871a35", "c522890e544711b201a0d61e1b8bed4c");
+	//fprintf(stderr, "access_token:%s\n", access_token);
+	//int attention_state = getUserAttentionState("aaa", "or8D3v1ahWB3jxvU7pYilLy7_b1E");
+	//fprintf(stderr, "attention_state:%d\n", attention_state);
 	return 0;
 }

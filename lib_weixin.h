@@ -1,7 +1,7 @@
 #ifndef LIB_WEIXIN_H
 #define LIB_WEIXIN_H
 
-#define CREATCOMM_HEADER "Accept: CreatComm-WeiXinFrame"
+#define CREATCOMM_HEADER "Accept: WeiXinFrame"
 #define WEIXIN_TOKEN_API "https://api.weixin.qq.com/cgi-bin/token"
 #define WEIXIN_USERINFO_API "https://api.weixin.qq.com/cgi-bin/user/info"
 #define ACCESS_TOKEN_INVALIED 40001

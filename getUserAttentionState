@@ -13,5 +13,6 @@ if [ ! $3 ]; then
 fi
 ac_path="/usr/local/ac"
 export LD_LIBRARY_PATH="$ac_path/apache/lib/"
-$ac_path/apache/cgi-bin/authresult $1 $2 $3
+res=`$ac_path/apache/cgi-bin/authresult $1 $2 $3`
 export LD_LIBRARY_PATH=""
+exit ${res}
