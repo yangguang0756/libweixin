@@ -552,15 +552,17 @@ void FreeXmlData(char * xml_string)
 	}
 }
 //处理数据体的回掉函数
-size_t write_data(void* buffer,size_t size,size_t nmemb,void **stream)
+size_t write_data(void* buffer,size_t size,size_t nmemb,void *userdata)
 {
 	if (buffer != NULL && (strlen(buffer) != 0))
 	{
+		char ** stream = (char **)userdata;
 		*stream = calloc(nmemb, size);
 		memcpy(*(char **)stream, buffer, size * nmemb);
 	}
 	return size * nmemb;
 }
+
 
 void SendHttp(char * Url, char * Query, int Method)
 {
