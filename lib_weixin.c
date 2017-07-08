@@ -20,6 +20,9 @@ MACRO_STR_T g_query_str[] ={
 	MACRO_STR(_access_token),
 	MACRO_STR(_openid),
 	MACRO_STR(_lang),
+	MACRO_STR(_openId),
+	MACRO_STR(_weChatAppId),
+	MACRO_STR(_weChatAppSecret),
 	{-1, NULL}  
 };
 
@@ -551,6 +554,7 @@ void FreeXmlData(char * xml_string)
 		XmlDoc = NULL;
 	}
 }
+
 //处理数据体的回掉函数
 size_t write_data(void* buffer,size_t size,size_t nmemb,void *userdata)
 {
@@ -563,7 +567,7 @@ size_t write_data(void* buffer,size_t size,size_t nmemb,void *userdata)
 	return size * nmemb;
 }
 
-
+char NormalResult[NORMAL_RESULT_LEN] = {0};
 void SendHttp(char * Url, char * Query, int Method)
 {
 	CURL *curl;
@@ -578,6 +582,7 @@ void SendHttp(char * Url, char * Query, int Method)
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);//对返回的数据进行操作的函数地址
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &Response_Data);//这是write_data的第四个参数值默认为stdout
 		curl_easy_setopt(curl, CURLOPT_POST, Method);//0:GET 1:POST
+		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);//信任任何https证书
 		
 		//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L ); //在屏幕打印请求连接过程和返回http数据
 		curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10 );//接收数据时超时设置，如果10秒内数据未接收完，直接退出
@@ -596,6 +601,7 @@ void SendHttp(char * Url, char * Query, int Method)
 				memset(FullUrl + Url_Len, '?', 1);
 				memcpy(FullUrl + Url_Len + 1, Query, Query_Len);
 				memset(FullUrl + Url_Len + Query_Len + 1, '\0', 1);
+				//fprintf(stderr, "FullUrl: %s \n", FullUrl);
 				curl_easy_setopt(curl, CURLOPT_URL, FullUrl);
 			}
 				break;
@@ -619,6 +625,7 @@ void SendHttp(char * Url, char * Query, int Method)
 			if((CURLE_OK == res) && ct)
 			{
 				//fprintf(stderr, "We received Content-Type: %s \n", ct);
+				//fprintf(stderr, "We received Response_Data: %s \n", Response_Data);
 				if (strstr(ct,"application/json") != NULL)
 				{
 					ParseResponseJson(Response_Data);
@@ -626,6 +633,11 @@ void SendHttp(char * Url, char * Query, int Method)
 				else if (strstr(ct,"application/xml") != NULL)
 				{
 					ParseResponseXml((xmlChar *)Response_Data);
+				}
+				else if (strstr(ct,"text/plain") != NULL)
+				{
+					memset(NormalResult, 0, NORMAL_RESULT_LEN);
+					strncpy(NormalResult, Response_Data, NORMAL_RESULT_LEN);
 				}
 			}
 			//fprintf(stderr, "Response_Data:%s\n",Response_Data);
@@ -682,9 +694,26 @@ int getUserAttentionState(char * access_token, char * openid)
 	return subscribe;
 }
 
+int getUserAttentionStateByGoahead(char * openId, char * weChatAppId, char * weChatAppSecret)
+{
+	FreeQueryValue();
+	SetQueryValue(_openId, openId);
+	SetQueryValue(_weChatAppId, weChatAppId);
+	SetQueryValue(_weChatAppSecret, weChatAppSecret);
+	//fprintf(stderr, "%s:%d MakeQueryString:%s\n", __func__, __LINE__, MakeQueryString());
+	SendHttp(WEIXIN_USER_ATTENTION_STATE_API, MakeQueryString(), GET);
+	int attention_state = 0;
+	if (NormalResult != NULL && strlen(NormalResult) != 0)
+	{
+		attention_state = atoi(NormalResult);
+	}
+	return attention_state;
+}
+
 int main(void)
 {
 	fprintf(stderr, "hello world!\n");
+	//getUserAttentionStateByGoahead("1","2","4");
 	//CreatJsonData(NULL);
 	//ParseJsonData(szJson_Result);
 	//ParseJsonData(CreatJsonData(NULL));

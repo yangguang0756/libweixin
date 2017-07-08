@@ -1,9 +1,11 @@
 #ifndef LIB_WEIXIN_H
 #define LIB_WEIXIN_H
 
+#define NORMAL_RESULT_LEN 256
 #define CREATCOMM_HEADER "Accept: WeiXinFrame"
 #define WEIXIN_TOKEN_API "https://api.weixin.qq.com/cgi-bin/token"
 #define WEIXIN_USERINFO_API "https://api.weixin.qq.com/cgi-bin/user/info"
+#define WEIXIN_USER_ATTENTION_STATE_API "https://127.0.0.1/cgi-bin/authresult"
 #define ACCESS_TOKEN_INVALIED 40001
 #define ACCESS_TOKEN_EXPIRED 42001
 
@@ -34,6 +36,9 @@ typedef enum wx_query
 	_access_token,
 	_openid,
 	_lang,
+	_openId,
+	_weChatAppId,
+	_weChatAppSecret,
 	_wx_query_error,
 	WX_QUERY_END
 }
@@ -64,5 +69,6 @@ WX_XML_RESULT;
 
 char * getAccessToken(char * appid, char * appsecret);
 int getUserAttentionState(char * access_token, char * openid);
+int getUserAttentionStateByGoahead(char * openId, char * weChatAppId, char * weChatAppSecret);
 
 #endif

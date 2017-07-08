@@ -1,0 +1,48 @@
+include $(APP_DIR)/app.mk
+TARGET = libweixin.so
+TOOLS = getUserAttentionState
+#cJSON
+LDFLAGS += -L$(APP_DIR)/lib/weixin -lcJSON
+#xml2
+CFLAGS += -I$(APP_DIR)/lib/weixin/libxml2
+LDFLAGS += -lxml2
+#curl
+LDFLAGS += -lcurl
+SOURCE= \
+	lib_weixin.c
+
+OBJS = $(SOURCE:%.c=obj/%.o)
+
+TOOLS_SOURCE= \
+		getUserAttentionState.c
+
+TOOLS_OBJS = $(TOOLS_SOURCE:%.c=obj/%.o)
+
+default: $(TARGET) $(TOOLS)
+
+$(TARGET): $(OBJS)
+	$(CC) -fPIC -shared -o $@ $(OBJS) $(LDFLAGS)
+
+$(TOOLS): $(TOOLS_OBJS)
+	$(CC) -o $@ $(TOOLS_OBJS) $(LDFLAGS) -L$(APP_DIR)/lib/weixin -lweixin
+
+weixin: $(OBJS)
+	$(CC) -o $@ $(OBJS) $(LDFLAGS)
+
+obj/%.o:%.c
+	@mkdir -p obj
+	$(CC) -fPIC $(CFLAGS) -c $< -o $@ 
+	
+install:
+	cp -f $(TARGET) $(INST_DIR)/library/
+	cp -f libcJSON.so $(INST_DIR)/library/
+	cp -f /usr/lib/libxml2.so.2 $(INST_DIR)/library/libxml2.so.2
+	cp -f /usr/lib/libcurl.so.4.1.1 $(INST_DIR)/library/libcurl.so.4
+	cp -f third_support/liblber-2.4.so.2.10.3 $(INST_DIR)/library/liblber-2.4.so.2
+	cp -f third_support/libldap-2.4.so.2 $(INST_DIR)/library/
+	cp -f third_support/libsasl2.so.2 $(INST_DIR)/library/
+	cp -f third_support/libsmime3.so $(INST_DIR)/library/
+	cp -f third_support/libssh2.so.1 $(INST_DIR)/library/
+	cp -f getUserAttentionState $(INST_DIR)/program/
+clean:
+	rm -fr obj $(OBJS) $(TARGET) $(TOOLS_OBJS)
