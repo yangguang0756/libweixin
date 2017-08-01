@@ -9,6 +9,9 @@
 #define ACCESS_TOKEN_INVALIED 40001
 #define ACCESS_TOKEN_EXPIRED 42001
 
+#define UCPAAS_SEND_SMS_API "https://api.ucpaas.com/2014-06-30/Accounts/%s/Messages/templateSMS?sig=%s"
+#define UCPAAS_SEND_SMS_API_LEN 256
+
 typedef enum http_send_method 
 {
 	GET = 0,
@@ -52,6 +55,7 @@ typedef enum wx_json_result
 	r_nickname,
 	r_errcode,
 	r_errmsg,
+	r_respCode,
 	_wx_json_error,
 	WX_JSON_RESULT_END
 }
@@ -70,5 +74,6 @@ WX_XML_RESULT;
 char * getAccessToken(char * appid, char * appsecret);
 int getUserAttentionState(char * access_token, char * openid);
 int getUserAttentionStateByGoahead(char * openId, char * weChatAppId, char * weChatAppSecret);
+int SendSms(char * smsAccountId, char * smsAppId, char * smsTemplateId, char * smsSign, char * sms_Encode_Authorization, char * verification_Code, char * phone_Num);
 
 #endif

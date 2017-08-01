@@ -35,6 +35,7 @@ MACRO_STR_T g_json_result_str[] ={
 	MACRO_STR(r_nickname),
 	MACRO_STR(r_errcode),
 	MACRO_STR(r_errmsg),
+	MACRO_STR(r_respCode),
 	{-1, NULL}  
 };
 
@@ -568,11 +569,18 @@ size_t write_data(void* buffer,size_t size,size_t nmemb,void *userdata)
 }
 
 char NormalResult[NORMAL_RESULT_LEN] = {0};
-void SendHttp(char * Url, char * Query, int Method)
+void SendHttp(char * Url, char * Query, int Method, struct curl_slist *extern_headers)
 {
 	CURL *curl;
 	struct curl_slist *headers = NULL;
-    headers = curl_slist_append(headers, CREATCOMM_HEADER);
+	if (extern_headers == NULL)
+	{
+    	headers = curl_slist_append(headers, CREATCOMM_HEADER);
+	}
+	else
+	{
+		headers = extern_headers;
+	}
 	curl = curl_easy_init();
 	if(curl) 
 	{
@@ -658,7 +666,7 @@ char * getAccessToken(char * appid, char * appsecret)
 	SetQueryValue(_appid, appid);
 	SetQueryValue(_secret, appsecret);
 	//fprintf(stderr, "%s:%d MakeQueryString:%s\n", __func__, __LINE__, MakeQueryString());
-	SendHttp(WEIXIN_TOKEN_API, MakeQueryString(), GET);
+	SendHttp(WEIXIN_TOKEN_API, MakeQueryString(), GET, NULL);
 	char * p_access_token = GetJsonResult(r_access_token);
 	if (p_access_token == NULL)
 	{
@@ -675,7 +683,7 @@ int getUserAttentionState(char * access_token, char * openid)
 	SetQueryValue(_access_token, access_token);
 	SetQueryValue(_openid, openid);
 	//fprintf(stderr, "%s:%d MakeQueryString:%s\n", __func__, __LINE__, MakeQueryString());
-	SendHttp(WEIXIN_USERINFO_API, MakeQueryString(), GET);
+	SendHttp(WEIXIN_USERINFO_API, MakeQueryString(), GET, NULL);
 	char * p_subscribe = GetJsonResult(r_subscribe);
 	int subscribe = 0;
 	if (p_subscribe != NULL && strlen(p_subscribe) != 0)
@@ -701,7 +709,7 @@ int getUserAttentionStateByGoahead(char * openId, char * weChatAppId, char * weC
 	SetQueryValue(_weChatAppId, weChatAppId);
 	SetQueryValue(_weChatAppSecret, weChatAppSecret);
 	//fprintf(stderr, "%s:%d MakeQueryString:%s\n", __func__, __LINE__, MakeQueryString());
-	SendHttp(WEIXIN_USER_ATTENTION_STATE_API, MakeQueryString(), GET);
+	SendHttp(WEIXIN_USER_ATTENTION_STATE_API, MakeQueryString(), GET, NULL);
 	int attention_state = 0;
 	if (NormalResult != NULL && strlen(NormalResult) != 0)
 	{
@@ -710,9 +718,73 @@ int getUserAttentionStateByGoahead(char * openId, char * weChatAppId, char * weC
 	return attention_state;
 }
 
+inline struct curl_slist * makeUcpaasAPIHeader(struct curl_slist **headers, char * encode_Authorization)
+{	
+	*headers = curl_slist_append(*headers, "Host:api.ucpaas.com");
+	*headers = curl_slist_append(*headers, "Accept:application/json");
+	*headers = curl_slist_append(*headers, "Content-type:application/json;charset=utf-8");
+	*headers = curl_slist_append(*headers, encode_Authorization);
+	return *headers;
+}
+
+inline char * MakeUcpaasJsonQueryString
+	(char * smsAppId, char * smsTemplateId, char * param, char * phone_num, char ** ucpaas_Json_String)
+{
+	cJSON* pRoot = cJSON_CreateObject();  
+    cJSON* pItem = cJSON_CreateObject();  
+	if (smsAppId == NULL || smsTemplateId == NULL || param == NULL || phone_num == NULL)
+	{
+		return "";
+	}
+    cJSON_AddStringToObject(pItem, "appId", smsAppId);  
+    cJSON_AddStringToObject(pItem, "param", param);  
+    cJSON_AddStringToObject(pItem, "templateId", smsTemplateId);  
+    cJSON_AddStringToObject(pItem, "to", phone_num);  
+    cJSON_AddItemToObject(pRoot, "templateSMS", pItem);  
+  
+    *ucpaas_Json_String = cJSON_Print(pRoot);  
+    cJSON_Delete(pRoot);
+	fprintf(stderr, "%s\n",*ucpaas_Json_String);  
+	
+	return *ucpaas_Json_String;
+}
+
+int SendSms(char * smsAccountId, char * smsAppId, char * smsTemplateId, char * smsSign, char * sms_Encode_Authorization, char * verification_Code, char * phone_Num)
+{
+	struct curl_slist *headers = NULL;
+	char * ucpaas_Json_String = NULL;
+	char ucpaas_Send_Sms_Api[UCPAAS_SEND_SMS_API_LEN] = {0};
+	sprintf(ucpaas_Send_Sms_Api, UCPAAS_SEND_SMS_API, smsAccountId, smsSign);
+	SendHttp(ucpaas_Send_Sms_Api, MakeUcpaasJsonQueryString
+		(smsAppId, smsTemplateId, verification_Code, phone_Num, &ucpaas_Json_String), POST
+		, makeUcpaasAPIHeader(&headers, sms_Encode_Authorization));
+	if (ucpaas_Json_String != NULL)
+	{
+		free(ucpaas_Json_String);
+		ucpaas_Json_String = NULL;
+	}
+	char * p_respCode = GetJsonResult(r_respCode);
+	int respCode = -1;
+	if (p_respCode != NULL && strlen(p_respCode) != 0)
+	{
+		respCode = atoi(p_respCode);
+	}
+	else
+	{
+		fprintf(stderr, "%s:%d errcode:%s errmsg:%s\n", 
+			__func__, __LINE__,  GetJsonResult(r_errcode), GetJsonResult(r_errmsg));
+		if (GetJsonResult(r_errcode) != NULL)
+		{
+			respCode = atoi(GetJsonResult(r_errcode));
+		}
+	}
+	return respCode;
+}
+
 int main(void)
 {
 	fprintf(stderr, "hello world!\n");
+	//SendSms("ee53e0e7ec3449d77af1ae14f58e6843", "e8e608f36b4c4808adf034a14729fc6c", "96076", "2CCC0B07077FD646BBF3D7C3585937A9", "ZWU1M2UwZTdlYzM0NDlkNzdhZjFhZTE0ZjU4ZTY4NDM6MjAxNzA3MjExMTUwNTM=", "123456", "13951814052");
 	//getUserAttentionStateByGoahead("1","2","4");
 	//CreatJsonData(NULL);
 	//ParseJsonData(szJson_Result);
@@ -737,7 +809,7 @@ int main(void)
 	SetQueryValue(_grant_type, "client_credential");
 	SetQueryValue(_appid, "wxfb84576193871a35");
 	SetQueryValue(_secret, "c522890e544711b201a0d61e1b8bed4c");
-	SendHttp(WEIXIN_TOKEN_API, MakeQueryString(), POST);
+	SendHttp(WEIXIN_TOKEN_API, MakeQueryString(), POST, NULL);
 	FreeQueryValue();
 	fprintf(stderr, "access_token:%s\n", GetJsonResultByName("access_token"));
 	fprintf(stderr, "expires_in:%s\n", GetJsonResultByName("expires_in"));
