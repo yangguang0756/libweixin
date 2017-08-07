@@ -573,6 +573,7 @@ void SendHttp(char * Url, char * Query, int Method, struct curl_slist *extern_he
 {
 	CURL *curl;
 	struct curl_slist *headers = NULL;
+	curl_global_init(CURL_GLOBAL_DEFAULT);
 	if (extern_headers == NULL)
 	{
     	headers = curl_slist_append(headers, CREATCOMM_HEADER);
@@ -590,7 +591,9 @@ void SendHttp(char * Url, char * Query, int Method, struct curl_slist *extern_he
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);//对返回的数据进行操作的函数地址
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &Response_Data);//这是write_data的第四个参数值默认为stdout
 		curl_easy_setopt(curl, CURLOPT_POST, Method);//0:GET 1:POST
-		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);//信任任何https证书
+		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);//信任任何https证书
+		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);//信任任何https主机
+		//curl_easy_setopt(curl, CURLOPT_CAINFO, "/cacert.pem");
 		
 		//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L ); //在屏幕打印请求连接过程和返回http数据
 		curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10 );//接收数据时超时设置，如果10秒内数据未接收完，直接退出
@@ -622,7 +625,8 @@ void SendHttp(char * Url, char * Query, int Method, struct curl_slist *extern_he
 				break;
 		}
 		res = curl_easy_perform(curl);
-
+		//fprintf(stderr, "res:%d %s\n", res, curl_easy_strerror(res));
+		
 		if(CURLE_OK == res) 
 		{
 			char *ct;
@@ -655,6 +659,7 @@ void SendHttp(char * Url, char * Query, int Method, struct curl_slist *extern_he
 		curl_easy_cleanup(curl);
 		if (Response_Data != NULL) {free(Response_Data);Response_Data = NULL;}
 	}
+	curl_global_cleanup();
 	return;
 }
 
